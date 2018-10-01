@@ -1,0 +1,17 @@
+{
+  "name": "state-machine-class",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./index.js",
+  "scripts": {
+    "test": "node tests"
+  },
+  "author": "John Henry",
+  "license": "MIT",
+  "devDependencies": {
+    "tape": "4.9.1"
+  },
+  "dependencies": {
+    "event-emitter-class": "0.0.0"
+  }
+}
