@@ -1,4 +1,5 @@
 const WARNINGS = {
+    ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE: "attempt to set state on pending machine",
     ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE: "attempt to set state on dead machine",
     CANNOT_TRANSITION_TO_FALSY_STATE: "cannot transition to falsy states",
     STATE_MACHINE_DEAD: "state machine is dead",

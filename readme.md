@@ -154,15 +154,17 @@ Example: state (getter)
 sm.state;
 ```
 
-
-### Statemachine#setState (stateName:string)
+### async Statemachine#setState (stateName:string)
 
 Attempts to set current state while invoking any transition handlers
 
 Example: setState
 ```javascript
-sm.setState("secons-state");
+await sm.setState("secons-state");
 ```
+
+Note: Statemachine#setState functions asynchronously when using functions in the transition object.
+To be safe; always use in conjunction with the "await" keyword.
 
 Also available as setter with sm.state.
 
@@ -170,15 +172,24 @@ Example: state (setter)
 ```javascript
 sm.state = "secons-state";
 ```
+Note: Because Statemachine#state functions asynchronously, but cannot be used with the await keyword, avoid using functions in the transition object OR use in conjunction with the _pending_ method, which is synchronous.
 
 ### Statemachine#die(reason:string):
 Puts state machine into a dead state where it will no longer transition.
 Cleanup function will run if defined.
 
-
 Example: die
 ```javascript
 sm.die("reason for dying");
+```
+
+### Statemachine#pending:boolean
+
+Getter that returns pending status
+
+Example: pending (getter)
+```javascript
+sm.pending;
 ```
 
 ### Statemachine#dead:boolean
@@ -199,12 +210,23 @@ Emitted when state changes from one to anotuer
 #### Payload
     - Original State
     - New State
+    - (optional) Reason
+
+### StateMachine.STATEPENDING
+Emitted when a state change begins.
+#### Emitted Specifically
+    - At the beginning of a call to StateMachine#.setState
+#### Payload
+    - Current State
+    - Desired State
+    - (optional) Reason
 
 ### StateMachine.WARNING
 Emitted when a warning is thrown but state machine does not transition into from being alive to dead.
 #### Emitted Specifically
     - An attempt to transiton into a falsy state
     - An attempt to transition into a state that the machine is alredy in
+    - An attempt to transition into when a machine is alredy in pending
     - An attempt to transition into a state that is ot allowed
     - A transition function is interrupted for a user defined reason (truthy return)
     - An attempt to get the state of a dead state machine is made

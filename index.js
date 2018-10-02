@@ -24,8 +24,18 @@ const StateMachine = class extends EventEmitter {
         }
         this.on(StateMachine.ERROR, this.die.bind(this));
     }
-    setState(to) {
+    async setState(to, reason) {
+        const currentState = this.state;
+        INTERNAL_STATES.delete(this);
+        this.emit(StateMachine.STATEPENDING, currentState, to, reason);
         if (this.dead) {
+            this.emit(
+                StateMachine.WARNING,
+                WARNINGS.ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE
+            );
+            return this;
+        }
+        if (!currentState) {
             this.emit(
                 StateMachine.WARNING,
                 WARNINGS.ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE
@@ -37,14 +47,15 @@ const StateMachine = class extends EventEmitter {
                 StateMachine.WARNING,
                 WARNINGS.CANNOT_TRANSITION_TO_FALSY_STATE
             );
+            INTERNAL_STATES.set(this, currentState);
+            return this;
         }
-        const currentState = this.state;
-
         if (currentState === to) {
             this.emit(
                 StateMachine.WARNING,
                 WARNINGS.__ALREAYD_IN_STATE(currentState)
             );
+            INTERNAL_STATES.set(this, currentState);
             return this;
         }
         if (
@@ -55,17 +66,19 @@ const StateMachine = class extends EventEmitter {
                 StateMachine.WARNING,
                 WARNINGS._TRANSITION_NOT_ALLOWED(currentState, to)
             );
+            INTERNAL_STATES.set(this, currentState);
             return this;
         }
         const transitionFunction = this._transitions[currentState][to];
         if (typeof transitionFunction === "function") {
             try {
-                const reason = transitionFunction.call(this, currentState, to);
+                const reason = await transitionFunction.call(this, currentState, to);
                 if (reason) {
                     this.emit(
                         StateMachine.WARNING,
                         WARNINGS._TRANSITION_INTERRUPTED(currentState, to, reason)
                     );
+                    INTERNAL_STATES.set(this, currentState);
                     return this;
                 }
             } catch (error) {
@@ -77,7 +90,7 @@ const StateMachine = class extends EventEmitter {
             }
         }
         INTERNAL_STATES.set(this, to);
-        this.emit(StateMachine.STATECHANGED, currentState, to);
+        this.emit(StateMachine.STATECHANGED, currentState, to, reason);
         return this;
     }
     getState() {
@@ -93,8 +106,11 @@ const StateMachine = class extends EventEmitter {
     set state(to) {
         this.setState(to);
     }
-    get dead() {
+    get pending() {
         return !INTERNAL_STATES.get(this);
+    }
+    get dead() {
+        return !!this._dead;
     }
     die(reason) {
         this.emit(StateMachine.DYING, reason);
@@ -102,12 +118,14 @@ const StateMachine = class extends EventEmitter {
         if (typeof this._cleanup === "function") {
             cleanupResult = this._cleanup(this);
         }
+        this._dead = true;
         INTERNAL_STATES.delete(this);
         this.emit(StateMachine.DEAD, cleanupResult);
         return this;
     }
 };
 StateMachine.STATECHANGED = "StateMachine.STATECHANGED";
+StateMachine.STATEPENDING = "StateMachine.STATEPENDING";
 StateMachine.WARNING = "StateMachine.WARNING";
 StateMachine.ERROR = "StateMachine.ERROR";
 StateMachine.DYING = "StateMachine.DYING";

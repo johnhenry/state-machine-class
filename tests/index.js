@@ -29,7 +29,7 @@ tape("Normal Transitions", ({
     end();
 });
 
-tape("Functional Transitions", ({
+tape("Functional Transitions", async ({
     equal,
     end
 }) => {
@@ -42,12 +42,52 @@ tape("Functional Transitions", ({
         }
     };
     const sm = new StateMachine(transitions, "default");
-    sm.state = "previous";
+    await sm.setState("previous");
     equal(sm.state, "previous", "Should transition only if function returns falsy value.");
-    sm.state = "last";
+    await sm.setState("last");
     equal(sm.state, "previous", "Should not transition function returns truthy value.");
     end();
 });
+
+
+tape("Pending Test", async ({
+    equal,
+    ok,
+    notOk,
+    end
+}) => {
+    const transitions = {
+        "default": {
+            "next": () => {}
+        }
+    };
+    const sm = new StateMachine(transitions, "default");
+    sm.setState("next").then(sm => {
+        equal(sm.state, "next");
+        end();
+    })
+    ok(sm.pending, "State Machine should be pending");
+    notOk(sm.state, "State should not exist");
+});
+
+tape("Pending Test 2 : setter", ({
+    equal,
+    ok,
+    notOk,
+    end
+}) => {
+    const transitions = {
+        "default": {
+            "next": () => {}
+        }
+    };
+    const sm = new StateMachine(transitions, "default");
+    sm.state = "next";
+    ok(sm.pending, "State Machine should be pending");
+    notOk(sm.state, "State should not exist");
+    end();
+});
+
 
 tape("Death of a State Machine", ({
     equal,
@@ -60,7 +100,6 @@ tape("Death of a State Machine", ({
             "last": () => {
                 throw new Error("cannot enter state");
             }
-
         }
     };
     const sm = new StateMachine(transitions, "default");
