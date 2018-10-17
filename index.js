@@ -6,7 +6,7 @@ const {
 //INTERNAL_STATES use to simulate private variables
 const INTERNAL_STATES = new Map();
 const StateMachine = class extends EventEmitter {
-    constructor(transitions = {}, defaultState = undefined, cleanup = undefined, events = undefined) {
+    constructor(transitions = {}, defaultState = undefined, cleanup = undefined, dieOnError = false, events = undefined) {
         super(events);
         if (typeof transitions !== "object") {
             throw new Error(ERRORS.MUST_DEFINE_DEFAULT_TRANSITIONS);
@@ -22,56 +22,63 @@ const StateMachine = class extends EventEmitter {
         if (typeof cleanup === "function") {
             this._cleanup = cleanup.bind(this);
         }
-        this.on(StateMachine.ERROR, this.die.bind(this));
+        this.dieOnError = dieOnError;
+        if (dieOnError) {
+            this.on(StateMachine.ERROR, this.die.bind(this));
+        }
     }
     async setState(to, reason) {
         const currentState = this.state;
-        INTERNAL_STATES.delete(this);
         this.emit(StateMachine.STATEPENDING, currentState, to, reason);
         if (this.dead) {
             this.emit(
-                StateMachine.WARNING,
-                WARNINGS.ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE
+                StateMachine.ERROR,
+                ERRORS.ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE
             );
+            throw new Error(ERRORS.ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE);
             return this;
         }
         if (!currentState) {
             this.emit(
-                StateMachine.WARNING,
-                WARNINGS.ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE
+                StateMachine.ERROR,
+                ERRORS.ATTEMPT_TO_SET_STATE_ON_PENDING_MACHINE
             );
+            if (this.dieOnError) {
+                this.die(ERRORS.ATTEMPT_TO_SET_STATE_ON_PENDING_MACHINE);
+            }
+            throw new Error(ERRORS.ATTEMPT_TO_SET_STATE_ON_PENDING_MACHINE);
             return this;
         }
         if (!to) {
             this.emit(
-                StateMachine.WARNING,
-                WARNINGS.CANNOT_TRANSITION_TO_FALSY_STATE
+                StateMachine.ERROR,
+                ERRORS.CANNOT_TRANSITION_TO_FALSY_STATE
             );
-            INTERNAL_STATES.set(this, currentState);
-            return this;
-        }
-        if (currentState === to) {
-            this.emit(
-                StateMachine.WARNING,
-                WARNINGS.__ALREAYD_IN_STATE(currentState)
-            );
-            INTERNAL_STATES.set(this, currentState);
+            if (this.dieOnError) {
+                this.die(ERRORS.CANNOT_TRANSITION_TO_FALSY_STATE);
+            }
+            throw new Error(ERRORS.CANNOT_TRANSITION_TO_FALSY_STATE);
             return this;
         }
         if (
             !this._transitions[currentState] ||
             !this._transitions[currentState][to]
         ) {
+            const message = ERRORS._TRANSITION_NOT_ALLOWED(currentState, to);
             this.emit(
-                StateMachine.WARNING,
-                WARNINGS._TRANSITION_NOT_ALLOWED(currentState, to)
+                StateMachine.ERROR,
+                message
             );
-            INTERNAL_STATES.set(this, currentState);
+            if (this.dieOnError) {
+                this.die(message);
+            }
+            throw new Error(message);
             return this;
         }
         const transitionFunction = this._transitions[currentState][to];
         if (typeof transitionFunction === "function") {
             try {
+                INTERNAL_STATES.delete(this);
                 const reason = await transitionFunction.call(this, currentState, to);
                 if (reason) {
                     this.emit(
@@ -80,12 +87,18 @@ const StateMachine = class extends EventEmitter {
                     );
                     INTERNAL_STATES.set(this, currentState);
                     return this;
+                } else {
+                    INTERNAL_STATES.set(this, currentState);
                 }
             } catch (error) {
                 this.emit(
                     StateMachine.ERROR,
                     ERRORS._TRANSITION_FAILED(currentState, to, error.message)
                 );
+                INTERNAL_STATES.set(this, currentState);
+                if (this.dieOnError) {
+                    this.die(ERRORS.CANNOT_TRANSITION_TO_FALSY_STATE);
+                }
                 return this;
             }
         }

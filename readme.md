@@ -32,7 +32,7 @@ export default class extends StateMachine{
 ## Constructor
 
 ```javascript
-new StateMachine(transitions, defaulltState, cleanup, events);
+new StateMachine(transitions, defaulltState, cleanup, dieOnError, events);
 ```
 
 ### transitions:Object
@@ -118,6 +118,9 @@ The default state. This must be defined.
 ### cleanup:Function
 This optional function runs after a state machine begins to die, but before it is fully dead meaning that it's state has yet to be nullified.
 If defined as a non-arrow function, "this" will reference the state machine instance.
+
+### dieOnError:Boolean
+This optional parameter (defalut:false) determines whether or not a state machine dies after an error.
 
 ### events:Object
 This set of events is passed to the constructor for the [Event Emitter Class](https://github.com/johnhenry/event-emitter-class) from which this class derives.
@@ -224,10 +227,6 @@ Emitted when a state change begins.
 ### StateMachine.WARNING
 Emitted when a warning is thrown but state machine does not transition into from being alive to dead.
 #### Emitted Specifically
-    - An attempt to transiton into a falsy state
-    - An attempt to transition into a state that the machine is alredy in
-    - An attempt to transition into when a machine is alredy in pending
-    - An attempt to transition into a state that is ot allowed
     - A transition function is interrupted for a user defined reason (truthy return)
     - An attempt to get the state of a dead state machine is made
     - An attempt to set the state of a dead state machine is made
@@ -238,6 +237,9 @@ Emitted when a warning is thrown but state machine does not transition into from
 Emitted when a state machine throw an error
 Note: Stete machine will die after emitting this error, even when forced to emait
 #### Emitted Specifically
+    - An attempt to transiton into a falsy state
+    - An attempt to transition into when a machine is alredy in pending
+    - An attempt to transition into a state that is ot allowed
     - A transition function throws an error
 #### Payload
     - Error Message
