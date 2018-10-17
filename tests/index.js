@@ -99,7 +99,9 @@ tape("Life of a State Machine", ({
         sm.state = "";
     } catch (error) {}
     equal(sm.state, "default", "Should not transition to a falsy state manually");
-    sm.state = "last";
+    try {
+        sm.state = "last";
+    } catch (error) {}
     notOk(sm.dead, "Should not be dead if an uncaught an error is thrown in a pre-transition function.");
     ok(sm.state, "State should be falsy after dying.");
     end();

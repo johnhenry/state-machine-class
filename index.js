@@ -67,27 +67,23 @@ const StateMachine = class extends EventEmitter {
         const transitionFunction = this._transitions[currentState][to];
         if (typeof transitionFunction === "function") {
             try {
-                INTERNAL_STATES.delete(this);
                 const reason = transitionFunction.call(this, currentState, to);
                 if (reason) {
                     this.emit(
                         StateMachine.WARNING,
                         WARNINGS._TRANSITION_INTERRUPTED(currentState, to, reason)
                     );
-                    INTERNAL_STATES.set(this, currentState);
                     return this;
-                } else {
-                    INTERNAL_STATES.set(this, currentState);
                 }
             } catch (error) {
                 this.emit(
                     StateMachine.ERROR,
                     ERRORS._TRANSITION_FAILED(currentState, to, error.message)
                 );
-                INTERNAL_STATES.set(this, currentState);
                 if (this.dieOnError) {
                     this.die(ERRORS.CANNOT_TRANSITION_TO_FALSY_STATE);
                 }
+                throw error;
                 return this;
             }
         }
@@ -107,9 +103,6 @@ const StateMachine = class extends EventEmitter {
     }
     set state(to) {
         this.setState(to);
-    }
-    get pending() {
-        return !INTERNAL_STATES.get(this);
     }
     get dead() {
         return !!this._dead;
