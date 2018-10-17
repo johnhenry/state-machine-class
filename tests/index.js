@@ -1,7 +1,7 @@
 const StateMachine = require("..");
 const tape = require("tape");
 
-tape("Normal Transitions", async ({
+tape("Normal Transitions", ({
     equal,
     end
 }) => {
@@ -39,7 +39,7 @@ tape("Normal Transitions", async ({
 
 });
 
-tape("Functional Transitions", async ({
+tape("Functional Transitions", ({
     equal,
     end
 }) => {
@@ -52,14 +52,14 @@ tape("Functional Transitions", async ({
         }
     };
     const sm = new StateMachine(transitions, "default");
-    await sm.setState("previous");
+    sm.state = "previous";
     equal(sm.state, "previous", "Should transition only if function returns falsy value.");
-    await sm.setState("last");
+    sm.state = "last";
     equal(sm.state, "previous", "Should not transition function returns truthy value.");
     end();
 });
 
-tape("Death of a State Machine", async ({
+tape("Death of a State Machine", ({
     equal,
     ok,
     notOk,
@@ -80,7 +80,7 @@ tape("Death of a State Machine", async ({
 
 
 
-tape("Life of a State Machine", async ({
+tape("Life of a State Machine", ({
     equal,
     ok,
     notOk,
@@ -93,8 +93,6 @@ tape("Life of a State Machine", async ({
             }
         }
     };
-
-
     const sm = new StateMachine(transitions, "default", undefined, undefined, undefined);
     equal(sm.dead, false, "Should not be dead after successful instantiation.");
     try {
