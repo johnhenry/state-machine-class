@@ -27,7 +27,7 @@ const StateMachine = class extends EventEmitter {
             this.on(StateMachine.ERROR, this.die.bind(this));
         }
     }
-    async setState(to, reason) {
+    setState(to, reason) {
         const currentState = this.state;
         this.emit(StateMachine.STATEPENDING, currentState, to, reason);
         if (this.dead) {
@@ -36,17 +36,6 @@ const StateMachine = class extends EventEmitter {
                 ERRORS.ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE
             );
             throw new Error(ERRORS.ATTEMPT_TO_SET_STATE_ON_DEAD_MACHINE);
-            return this;
-        }
-        if (!currentState) {
-            this.emit(
-                StateMachine.ERROR,
-                ERRORS.ATTEMPT_TO_SET_STATE_ON_PENDING_MACHINE
-            );
-            if (this.dieOnError) {
-                this.die(ERRORS.ATTEMPT_TO_SET_STATE_ON_PENDING_MACHINE);
-            }
-            throw new Error(ERRORS.ATTEMPT_TO_SET_STATE_ON_PENDING_MACHINE);
             return this;
         }
         if (!to) {
@@ -79,7 +68,7 @@ const StateMachine = class extends EventEmitter {
         if (typeof transitionFunction === "function") {
             try {
                 INTERNAL_STATES.delete(this);
-                const reason = await transitionFunction.call(this, currentState, to);
+                const reason = transitionFunction.call(this, currentState, to);
                 if (reason) {
                     this.emit(
                         StateMachine.WARNING,

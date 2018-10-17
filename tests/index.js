@@ -59,46 +59,6 @@ tape("Functional Transitions", async ({
     end();
 });
 
-
-tape("Pending Test", async ({
-    equal,
-    ok,
-    notOk,
-    end
-}) => {
-    const transitions = {
-        "default": {
-            "next": () => {}
-        }
-    };
-    const sm = new StateMachine(transitions, "default");
-    sm.setState("next").then(sm => {
-        equal(sm.state, "next");
-        end();
-    })
-    ok(sm.pending, "State Machine should be pending");
-    notOk(sm.state, "State should not exist");
-});
-
-tape("Pending Test 2 : setter", ({
-    equal,
-    ok,
-    notOk,
-    end
-}) => {
-    const transitions = {
-        "default": {
-            "next": () => {}
-        }
-    };
-    const sm = new StateMachine(transitions, "default");
-    sm.state = "next";
-    ok(sm.pending, "State Machine should be pending");
-    notOk(sm.state, "State should not exist");
-    end();
-});
-
-
 tape("Death of a State Machine", async ({
     equal,
     ok,
@@ -167,7 +127,6 @@ tape("Death of a State Machine: Part 2", ({
     ok(sm.dead, "Should not transition to a falsy state manually");
     notOk(sm.state, "Should be dead if an uncaught an error is thrown in a pre-transition function.");
     notOk(sm.payload, "Object should be cleaned up after dying");
-    sm.state = "default";
     notOk(sm.state, "State should remain falsy after dying.");
     end();
 });

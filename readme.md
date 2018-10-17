@@ -157,7 +157,7 @@ Example: state (getter)
 sm.state;
 ```
 
-### async Statemachine#setState (stateName:string)
+### Statemachine#setState (stateName:string)
 
 Attempts to set current state while invoking any transition handlers
 
@@ -166,16 +166,13 @@ Example: setState
 await sm.setState("secons-state");
 ```
 
-Note: Statemachine#setState functions asynchronously when using functions in the transition object.
-To be safe; always use in conjunction with the "await" keyword.
-
 Also available as setter with sm.state.
 
 Example: state (setter)
 ```javascript
 sm.state = "secons-state";
 ```
-Note: Because Statemachine#state functions asynchronously, but cannot be used with the await keyword, avoid using functions in the transition object OR use in conjunction with the _pending_ method, which is synchronous.
+
 
 ### Statemachine#die(reason:string):
 Puts state machine into a dead state where it will no longer transition.
@@ -186,14 +183,7 @@ Example: die
 sm.die("reason for dying");
 ```
 
-### Statemachine#pending:boolean
 
-Getter that returns pending status
-
-Example: pending (getter)
-```javascript
-sm.pending;
-```
 
 ### Statemachine#dead:boolean
 
